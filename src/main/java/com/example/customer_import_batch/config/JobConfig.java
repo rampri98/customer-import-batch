@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.orm.jpa.JpaTransactionManager;
 
 @Configuration
@@ -22,14 +23,16 @@ public class JobConfig {
     private final RepositoryItemWriter<Customer> writer;
     private final JobRepository jobRepository;
     private final JpaTransactionManager transactionManager;
+    private final TaskExecutor taskExecutor;
 
     @Autowired
-    public JobConfig(FlatFileItemReader<Customer> reader, ItemProcessor<Customer, Customer> processor, RepositoryItemWriter<Customer> writer, JobRepository jobRepository, JpaTransactionManager transactionManager) {
+    public JobConfig(FlatFileItemReader<Customer> reader, ItemProcessor<Customer, Customer> processor, RepositoryItemWriter<Customer> writer, JobRepository jobRepository, JpaTransactionManager transactionManager, TaskExecutor taskExecutor) {
         this.reader = reader;
         this.processor = processor;
         this.writer = writer;
         this.jobRepository = jobRepository;
         this.transactionManager = transactionManager;
+        this.taskExecutor = taskExecutor;
     }
 
     @Bean
@@ -45,6 +48,7 @@ public class JobConfig {
         return new StepBuilder("customerCsvStep", jobRepository).<Customer, Customer>chunk(chunkSize, transactionManager)
                 .reader(reader)
                 .writer(writer)
+                .taskExecutor(taskExecutor)
                 .build();
     }
 }
