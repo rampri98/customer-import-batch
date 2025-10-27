@@ -24,27 +24,29 @@ public class JobConfig {
     private final JobRepository jobRepository;
     private final JpaTransactionManager transactionManager;
     private final TaskExecutor taskExecutor;
+    private final int chunkSize;
 
     @Autowired
-    public JobConfig(FlatFileItemReader<Customer> reader, ItemProcessor<Customer, Customer> processor, RepositoryItemWriter<Customer> writer, JobRepository jobRepository, JpaTransactionManager transactionManager, TaskExecutor taskExecutor) {
+    public JobConfig(FlatFileItemReader<Customer> reader, ItemProcessor<Customer, Customer> processor, RepositoryItemWriter<Customer> writer, JobRepository jobRepository, JpaTransactionManager transactionManager, TaskExecutor taskExecutor,@Value("${spring.batch.chunk.size}") int chunkSize) {
         this.reader = reader;
         this.processor = processor;
         this.writer = writer;
         this.jobRepository = jobRepository;
         this.transactionManager = transactionManager;
         this.taskExecutor = taskExecutor;
+        this.chunkSize = chunkSize;
     }
 
     @Bean
-    public Job runJob(@Value("${spring.batch.chunk.size}") int chunkSize) {
+    public Job runJob() {
         return new JobBuilder("customer", jobRepository)
-                .start(step(chunkSize))
+                .start(step())
                 .build();
 
     }
 
     @Bean
-    public Step step(int chunkSize) {
+    public Step step() {
         return new StepBuilder("customerCsvStep", jobRepository).<Customer, Customer>chunk(chunkSize, transactionManager)
                 .reader(reader)
                 .writer(writer)
